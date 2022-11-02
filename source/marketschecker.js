@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const constants = require("./constants.js");
+const constants = require("../constants.js");
 const thalesData = require("thales-data");
 const ethers = require("ethers");
 
@@ -32,8 +32,6 @@ async function processMarkets(priceLowerLimit, priceUpperLimit, roundEndTime) {
     wallet
   );
 
-  var t29 = performance.now();
-
   for (const market of positionalMarkets) {
     if (inTradingWeek(market.maturityDate, roundEndTime)) {
       try {
@@ -47,34 +45,30 @@ async function processMarkets(priceLowerLimit, priceUpperLimit, roundEndTime) {
             address: market.address,
             position: Position.UP,
             currencyKey: market.currencyKey,
-            price: priceUP
+            price: priceUP,
           });
           console.log(market.address, "PriceUp", priceUP);
-        } else if (priceDOWN >= priceLowerLimit && priceDOWN <= priceUpperLimit) {
+        } else if (
+          priceDOWN >= priceLowerLimit &&
+          priceDOWN <= priceUpperLimit
+        ) {
           tradingMarkets.push({
             address: market.address,
             position: Position.DOWN,
             currencyKey: market.currencyKey,
-            price: priceDOWN
+            price: priceDOWN,
           });
           console.log(market.address, "PriceDown", priceDOWN);
         } else {
           continue;
         }
-        
       } catch (e) {
         console.log(e);
       }
     }
   }
 
-  var t30 = performance.now();
-  console.log(
-    "Finished processing markets in " + (t30 - t29) + " milliseconds."
-  );
-  console.log(
-    "--------------------Finished processing markets-------------------"
-  );
+  console.log("Finished processing markets");
 
   return tradingMarkets;
 }
