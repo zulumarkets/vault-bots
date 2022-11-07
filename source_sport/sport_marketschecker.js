@@ -29,12 +29,9 @@ async function processMarkets(
     "--------------------Started processing markets-------------------"
   );
 
-  let dateToUse = new Date(new Date().getTime() - 7 * (24 * 60 * 60 * 1000)); // subtracted 2 days from existing date
-  let minManurityValue = parseInt(dateToUse.getTime() / 1000);
   const positionalMarkets = await thalesData.sportMarkets.markets({
     max: Infinity,
     network: process.env.NETWORK_ID,
-    minTimestamp: minManurityValue,
     isResolved: false,
   });
 

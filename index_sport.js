@@ -6,7 +6,7 @@ async function doLoop() {
   while (true) {
     try {
       await doMain();
-      await delay(1000 * 60 * 5);
+      await delay(1000 * 60 * process.env.DELAY_IN_MINUTES);
     } catch (e) {
       console.log(e);
     }

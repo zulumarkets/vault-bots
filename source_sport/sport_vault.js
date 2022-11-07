@@ -127,7 +127,6 @@ async function trade(
     }
   }
 
-  let t30 = performance.now();
   console.log("Finished trading markets  ");
 }
 
