@@ -55,6 +55,56 @@ const thalesAMMContract = {
         {
           indexed: false,
           internalType: "address",
+          name: "buyer",
+          type: "address",
+        },
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "sUSDPaid",
+          type: "uint256",
+        },
+        {
+          indexed: false,
+          internalType: "bool",
+          name: "inTheMoney",
+          type: "bool",
+        },
+      ],
+      name: "BoughtOptionType",
+      type: "event",
+    },
+    {
+      anonymous: false,
+      inputs: [
+        {
+          indexed: false,
+          internalType: "address",
+          name: "buyer",
+          type: "address",
+        },
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "sUSDPaid",
+          type: "uint256",
+        },
+      ],
+      name: "BoughtWithDiscount",
+      type: "event",
+    },
+    {
+      anonymous: false,
+      inputs: [
+        {
+          indexed: false,
+          internalType: "address",
           name: "oldOwner",
           type: "address",
         },
@@ -149,19 +199,6 @@ const thalesAMMContract = {
       inputs: [
         {
           indexed: false,
-          internalType: "uint256",
-          name: "_capPerMarket",
-          type: "uint256",
-        },
-      ],
-      name: "SetCapPerMarket",
-      type: "event",
-    },
-    {
-      anonymous: false,
-      inputs: [
-        {
-          indexed: false,
           internalType: "bytes32",
           name: "asset",
           type: "bytes32",
@@ -195,11 +232,23 @@ const thalesAMMContract = {
         {
           indexed: false,
           internalType: "uint256",
-          name: "_spread",
+          name: "minPrice",
+          type: "uint256",
+        },
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "maxPrice",
+          type: "uint256",
+        },
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "capPerMarket",
           type: "uint256",
         },
       ],
-      name: "SetMaxSupportedPrice",
+      name: "SetMinMaxSupportedPriceCapPerMarket",
       type: "event",
     },
     {
@@ -213,19 +262,6 @@ const thalesAMMContract = {
         },
       ],
       name: "SetMinSpread",
-      type: "event",
-    },
-    {
-      anonymous: false,
-      inputs: [
-        {
-          indexed: false,
-          internalType: "uint256",
-          name: "_spread",
-          type: "uint256",
-        },
-      ],
-      name: "SetMinSupportedPrice",
       type: "event",
     },
     {
@@ -461,7 +497,13 @@ const thalesAMMContract = {
         },
       ],
       name: "buyFromAMM",
-      outputs: [],
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
       payable: false,
       stateMutability: "nonpayable",
       type: "function",
@@ -506,7 +548,13 @@ const thalesAMMContract = {
         },
       ],
       name: "buyFromAMMWithDifferentCollateralAndReferrer",
-      outputs: [],
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
       payable: false,
       stateMutability: "nonpayable",
       type: "function",
@@ -546,7 +594,13 @@ const thalesAMMContract = {
         },
       ],
       name: "buyFromAMMWithReferrer",
-      outputs: [],
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
       payable: false,
       stateMutability: "nonpayable",
       type: "function",
@@ -645,45 +699,9 @@ const thalesAMMContract = {
       name: "buyPriceImpact",
       outputs: [
         {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
-        },
-      ],
-      payable: false,
-      stateMutability: "view",
-      type: "function",
-    },
-    {
-      constant: true,
-      inputs: [
-        {
-          internalType: "uint256",
-          name: "_price",
-          type: "uint256",
-        },
-        {
-          internalType: "uint256",
-          name: "strike",
-          type: "uint256",
-        },
-        {
-          internalType: "uint256",
-          name: "timeLeftInDays",
-          type: "uint256",
-        },
-        {
-          internalType: "uint256",
-          name: "volatility",
-          type: "uint256",
-        },
-      ],
-      name: "calculateOdds",
-      outputs: [
-        {
-          internalType: "uint256",
-          name: "",
-          type: "uint256",
+          internalType: "int256",
+          name: "_available",
+          type: "int256",
         },
       ],
       payable: false,
@@ -947,6 +965,21 @@ const thalesAMMContract = {
           internalType: "address",
           name: "",
           type: "address",
+        },
+      ],
+      payable: false,
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      constant: true,
+      inputs: [],
+      name: "maxAllowedPegSlippagePercentage",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
         },
       ],
       payable: false,
@@ -1300,7 +1333,13 @@ const thalesAMMContract = {
         },
       ],
       name: "sellToAMM",
-      outputs: [],
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
       payable: false,
       stateMutability: "nonpayable",
       type: "function",
@@ -1334,6 +1373,21 @@ const thalesAMMContract = {
       ],
       payable: false,
       stateMutability: "view",
+      type: "function",
+    },
+    {
+      constant: false,
+      inputs: [
+        {
+          internalType: "contract IThalesAMMUtils",
+          name: "_ammUtils",
+          type: "address",
+        },
+      ],
+      name: "setAmmUtils",
+      outputs: [],
+      payable: false,
+      stateMutability: "nonpayable",
       type: "function",
     },
     {
@@ -1383,6 +1437,11 @@ const thalesAMMContract = {
           internalType: "bool",
           name: "_curveOnrampEnabled",
           type: "bool",
+        },
+        {
+          internalType: "uint256",
+          name: "_maxAllowedPegSlippagePercentage",
+          type: "uint256",
         },
       ],
       name: "setCurveSUSD",

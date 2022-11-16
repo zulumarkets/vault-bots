@@ -11,31 +11,25 @@ const marketschecker = require("./marketschecker.js");
 
 const { performance } = require("perf_hooks");
 
-const Discord = require("discord.js");
-const vaultBot = new Discord.Client();
-vaultBot.login(process.env.VAULT_BOT_TOKEN);
-
-const Asset = {
-  ETH: 0,
-  BTC: 1,
-  Other: 2,
-};
+// const Discord = require("discord.js");
+// const vaultBot = new Discord.Client();
+// vaultBot.login(process.env.VAULT_BOT_TOKEN);
 
 const thalesAMMContract = new ethers.Contract(
-  process.env.THALES_AMM_CONTRACT,
-  ThalesAMM.thalesAMMContract.abi,
-  wallet
+    process.env.THALES_AMM_CONTRACT,
+    ThalesAMM.thalesAMMContract.abi,
+    wallet
 );
 
 const VaultContract = new ethers.Contract(
-  process.env.VAULT_CONTRACT,
-  Vault.vaultContract.abi,
-  wallet
+    process.env.AMM_VAULT_CONTRACT,
+    Vault.vaultContract.abi,
+    wallet
 );
 
 async function processVault() {
   const round = await VaultContract.round();
-  const roundEndTime = (await VaultContract.roundEndTime(round)).toString();
+  const roundEndTime = (await VaultContract.getCurrentRoundEnd()).toString();
   let closingDate = new Date(roundEndTime * 1000.0).getTime();
 
   const priceUpperLimit = (await VaultContract.priceUpperLimit()) / 1e18;
@@ -44,11 +38,11 @@ async function processVault() {
   const skewImpactLimit = (await VaultContract.skewImpactLimit()) / 1e18;
 
   await trade(
-    priceLowerLimit,
-    priceUpperLimit,
-    skewImpactLimit,
-    round,
-    closingDate
+      priceLowerLimit,
+      priceUpperLimit,
+      skewImpactLimit,
+      round,
+      closingDate
   );
 
   await closeRound(closingDate);
@@ -60,37 +54,54 @@ async function closeRound(roundEndTime) {
     let now = new Date();
 
     if (now.getTime() > roundEndTime) {
-      let tx = await VaultContract.closeRound();
-      await tx.wait().then((e) => {
-        console.log("Round closed");
-      });
+      let canCloseRound = await VaultContract.canCloseCurrentRound();
+      if (canCloseRound) {
+        let tx = await VaultContract.closeRound();
+        await tx.wait().then((e) => {
+          console.log("Round closed");
+        });
+      }
     } else {
       console.log("Cannot close round yet");
     }
   } catch (e) {
     let errorBody = JSON.parse(e.error.error.body);
     console.log("Failed to close the round", errorBody.error.message);
-    await sendRoundErrorMessage( errorBody.error.message);
+    await sendRoundErrorMessage(errorBody.error.message);
   }
 }
 
 async function trade(
-  priceLowerLimit,
-  priceUpperLimit,
-  skewImpactLimit,
-  round,
-  roundEndTime
-) {
-  let tradingMarkets = await marketschecker.processMarkets(
     priceLowerLimit,
     priceUpperLimit,
+    skewImpactLimit,
+    round,
     roundEndTime
+) {
+  let tradingMarkets = await marketschecker.processMarkets(
+      priceLowerLimit,
+      priceUpperLimit,
+      roundEndTime,
+      skewImpactLimit
   );
-
-  let t29 = performance.now();
 
   for (const key in tradingMarkets) {
     let market = tradingMarkets[key];
+
+    let tradedInRoundAlready = await VaultContract.isTradingMarketInARound(
+        round,
+        market.address
+    );
+    if (tradedInRoundAlready) {
+      let tradedBeforePosition =
+          await VaultContract.tradingMarketPositionPerRound(
+              round,
+              market.address
+          );
+      if (tradedBeforePosition != market.position) {
+        continue;
+      }
+    }
 
     let result = await amountToBuy(market, round, skewImpactLimit);
 
@@ -100,12 +111,13 @@ async function trade(
     if (result.amount > 0) {
       try {
         let tx = await VaultContract.trade(
-          market.address,
-          w3utils.toWei(result.amount.toString())
+            market.address,
+            w3utils.toWei(result.amount.toString()),
+            result.position
         );
         let receipt = await tx.wait();
         let transactionHash = receipt.transactionHash;
-        await sendTradeSuccessMessage(market, result, transactionHash);
+        // await sendTradeSuccessMessage(market, result, transactionHash);
         console.log("Trade made");
       } catch (e) {
         let errorBody = JSON.parse(e.error.error.body);
@@ -115,28 +127,28 @@ async function trade(
     }
   }
 
-  let t30 = performance.now();
-  console.log("Finished trading markets in " + (t30 - t29) + " milliseconds.");
+  console.log("Finished trading markets  ");
 }
 
 async function amountToBuy(market, round, skewImpactLimit) {
+  const minTradeAmount = (await VaultContract.minTradeAmount()) / 1e18;
   let amount = 0,
-    finalAmount = 0,
-    quote = 0,
-    finalQuote = 0,
-    step = 10;
+      finalAmount = 0,
+      quote = 0,
+      finalQuote = 0,
+      step = minTradeAmount;
 
   const maxAmount =
-    (await thalesAMMContract.availableToBuyFromAMM(
-      market.address,
-      market.position
-    )) / 1e18;
+      (await thalesAMMContract.availableToBuyFromAMM(
+          market.address,
+          market.position
+      )) / 1e18;
 
   const availableAllocationPerAsset =
-    (await Vault.getAvailableAllocationPerAsset(round, getAsset(currencyKey))) /
-    1e18;
-  if (availableAllocationPerAsset < 10) {
-    step = 1;
+      (await VaultContract.getAvailableAllocationForMarket(market.address)) /
+      1e18;
+  if (maxAmount < minTradeAmount) {
+    return { amount: 0, quote: 0, position: market.position };
   }
   console.log("Processing market", market.address);
 
@@ -145,97 +157,97 @@ async function amountToBuy(market, round, skewImpactLimit) {
     amount += step;
 
     let skewImpact =
-      (await thalesAMMContract.buyPriceImpact(
-        market.address,
-        market.position,
-        w3utils.toWei(amount.toString())
-      )) / 1e18;
+        (await thalesAMMContract.buyPriceImpact(
+            market.address,
+            market.position,
+            w3utils.toWei(amount.toString())
+        )) / 1e18;
 
     if (skewImpact >= skewImpactLimit) break;
 
     finalQuote = quote;
     quote =
-      (await thalesAMMContract.buyFromAmmQuote(
-        market.address,
-        market.position,
-        w3utils.toWei(amount.toString())
-      )) / 1e18;
+        (await thalesAMMContract.buyFromAmmQuote(
+            market.address,
+            market.position,
+            w3utils.toWei(amount.toString())
+        )) / 1e18;
 
     if (quote >= availableAllocationPerAsset) break;
   }
 
-  return { amount: finalAmount, quote: finalQuote };
+  return { amount: finalAmount, quote: finalQuote, position: market.position };
 }
 
 async function sendTradeSuccessMessage(market, result, transactionHash) {
   var message = new Discord.MessageEmbed()
-    .addFields(
-      {
-        name: ":coin: Vault trade made :coin:",
-        value: "\u200b",
-      },
-      {
-        name: `${
-          market.position == 1
-            ? ":chart_with_downwards_trend:"
-            : ":chart_with_upwards_trend:"
-        } Bought`,
-        value: `${result.amount} ${
-          market.position == 1 ? "DOWN" : "UP"
-        } options`,
-      },
-      {
-        name: ":dollar: Amount spent",
-        value: `${parseFloat(result.quote).toFixed(4)} sUSD`,
-      },
-      {
-        name: ":bank: Market",
-        value: market.address,
-      },
-      {
-        name: ":receipt: Transaction",
-        value: `[View on block explorer](${process.env.TX_EXPLORER_URL}${transactionHash})`,
-      }
-    )
-    .setColor("#00ffb3");
+      .addFields(
+          {
+            name: ":coin: Vault trade made :coin:",
+            value: "\u200b",
+          },
+          {
+            name: `${
+                market.position == 1
+                    ? ":chart_with_downwards_trend:"
+                    : ":chart_with_upwards_trend:"
+                } Bought`,
+            value: `${result.amount} ${
+                market.position == 1 ? "DOWN" : "UP"
+                } options`,
+          },
+          {
+            name: ":dollar: Amount spent",
+            value: `${parseFloat(result.quote).toFixed(4)} sUSD`,
+          },
+          {
+            name: ":bank: Market",
+            value: market.address,
+          },
+          {
+            name: ":receipt: Transaction",
+            value: `[View on block explorer](${process.env.TX_EXPLORER_URL}${transactionHash})`,
+          }
+      )
+      .setColor("#00ffb3");
   let vaultInfo = await vaultBot.channels.fetch(process.env.SUCCESS_CHANNEL_ID);
   vaultInfo.send(message);
 }
 
 async function sendTradeErrorMessage(address, message) {
   var message = new Discord.MessageEmbed()
-    .addFields(
-      {
-        name: ":exclamation: Vault trade error :exclamation:",
-        value: "\u200b",
-      },
-      {
-        name: "Market",
-        value: address,
-      },
-      {
-        name: "Message",
-        value: message,
-      }
-    )
-    .setColor("#a83232");
+      .addFields(
+          {
+            name: ":exclamation: Vault trade error :exclamation:",
+            value: "\u200b",
+          },
+          {
+            name: "Market",
+            value: address,
+          },
+          {
+            name: "Message",
+            value: message,
+          }
+      )
+      .setColor("#a83232");
   let vaultInfo = await vaultBot.channels.fetch(process.env.ERROR_CHANNEL_ID);
   vaultInfo.send(message);
 }
 
 async function sendRoundErrorMessage(message) {
   var message = new Discord.MessageEmbed()
-    .addFields(
-      {
-        name: ":exclamation: Close round error :exclamation:",
-        value: "\u200b",
-      },
-      {
-        name: "Message",
-        value: message,
-      }
-    )
-    .setColor("#a83232");
+      .addFields(
+          {
+            name: ":exclamation: Close round error :exclamation:",
+            value: "\u200b",
+          },
+          {
+            name: "Message",
+            value: message,
+          }
+      )
+      .setColor("#a83232");
   let vaultInfo = await vaultBot.channels.fetch(process.env.ERROR_CHANNEL_ID);
   vaultInfo.send(message);
 }

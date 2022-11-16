@@ -3,6 +3,7 @@ require("dotenv").config();
 const constants = require("../constants.js");
 const thalesData = require("thales-data");
 const ethers = require("ethers");
+const w3utils = require("web3-utils");
 
 const wallet = new ethers.Wallet(constants.privateKey, constants.etherprovider);
 
@@ -13,52 +14,107 @@ const ThalesAMM = require("../contracts/ThalesAMM.js");
 let tradingMarkets = [];
 
 const Position = {
-  UP: 0,
-  DOWN: 1,
+  HOME: 0,
+  AWAY: 1,
+  DRAW: 2,
 };
 
-async function processMarkets(priceLowerLimit, priceUpperLimit, roundEndTime) {
+async function processMarkets(
+    priceLowerLimit,
+    priceUpperLimit,
+    roundEndTime,
+    skewImpactLimit
+) {
   console.log(
-    "--------------------Started processing markets-------------------"
+      "--------------------Started processing markets-------------------"
   );
-  const positionalMarkets = await thalesData.binaryOptions.markets({
+
+  let minManurityValue = parseInt(new Date().getTime() / 1000);
+  let positionalMarkets = await thalesData.binaryOptions.markets({
     max: Infinity,
     network: process.env.NETWORK_ID,
+    minMaturity: minManurityValue,
   });
 
   const thalesAMMContract = new ethers.Contract(
-    process.env.THALES_AMM_CONTRACT,
-    ThalesAMM.thalesAMMContract.abi,
-    wallet
+      process.env.THALES_AMM_CONTRACT,
+      ThalesAMM.thalesAMMContract.abi,
+      wallet
   );
 
-  for (const market of positionalMarkets) {
-    if (inTradingWeek(market.maturityDate, roundEndTime)) {
-      try {
-        let priceUP =
-          (await thalesAMMContract.price(market.address, Position.UP)) / 1e18;
-        let priceDOWN =
-          (await thalesAMMContract.price(market.address, Position.DOWN)) / 1e18;
+  console.log("Processing a total of " + positionalMarkets.length + " markets");
+  let i = 0;
 
-        if (priceUP >= priceLowerLimit && priceUP <= priceUpperLimit) {
-          tradingMarkets.push({
-            address: market.address,
-            position: Position.UP,
-            currencyKey: market.currencyKey,
-            price: priceUP,
-          });
-          console.log(market.address, "PriceUp", priceUP);
-        } else if (
-          priceDOWN >= priceLowerLimit &&
-          priceDOWN <= priceUpperLimit
+  for (const market of positionalMarkets) {
+    console.log("Processing " + i + " market");
+    i++;
+    if (inTradingWeek(market.maturityDate, roundEndTime)) {
+      console.log("eligible");
+      try {
+        let buyPriceImpactHome =
+            (await thalesAMMContract.buyPriceImpact(
+                market.address,
+                Position.HOME,
+                w3utils.toWei("1")
+            )) / 1e18;
+        let buyPriceImpactAway =
+            (await thalesAMMContract.buyPriceImpact(
+                market.address,
+                Position.AWAY,
+                w3utils.toWei("1")
+            )) / 1e18;
+        console.log("buyPriceImpactHome is " + buyPriceImpactHome);
+        console.log("buyPriceImpactAway is " + buyPriceImpactAway);
+        if (
+            buyPriceImpactHome >= skewImpactLimit &&
+            buyPriceImpactAway >= skewImpactLimit
+        ) {
+          continue;
+        }
+
+        let priceHome =
+            (await thalesAMMContract.buyFromAmmQuote(
+                market.address,
+                Position.HOME,
+                w3utils.toWei("1")
+            )) / 1e18;
+        let priceAway =
+            (await thalesAMMContract.buyFromAmmQuote(
+                market.address,
+                Position.AWAY,
+                w3utils.toWei("1")
+            )) / 1e18;
+
+        let skewImpact =
+            (await thalesAMMContract.buyPriceImpact(
+                market.address,
+                Position.HOME,
+                w3utils.toWei("1")
+            )) / 1e18;
+
+        if (
+            priceHome >= priceLowerLimit &&
+            priceHome <= priceUpperLimit &&
+            skewImpact < 0
         ) {
           tradingMarkets.push({
             address: market.address,
-            position: Position.DOWN,
+            position: Position.HOME,
             currencyKey: market.currencyKey,
-            price: priceDOWN,
+            price: priceHome,
           });
-          console.log(market.address, "PriceDown", priceDOWN);
+          console.log(market.address, "PriceHome", priceHome);
+        } else if (
+            priceAway >= priceLowerLimit &&
+            priceAway <= priceUpperLimit
+        ) {
+          tradingMarkets.push({
+            address: market.address,
+            position: Position.AWAY,
+            currencyKey: market.currencyKey,
+            price: priceAway,
+          });
+          console.log(market.address, "PriceAway", priceAway);
         } else {
           continue;
         }
@@ -68,7 +124,9 @@ async function processMarkets(priceLowerLimit, priceUpperLimit, roundEndTime) {
     }
   }
 
-  console.log("Finished processing markets");
+  console.log(
+      "--------------------Finished processing markets-------------------"
+  );
 
   return tradingMarkets;
 }
