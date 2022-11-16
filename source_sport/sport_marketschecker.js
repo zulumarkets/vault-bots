@@ -62,6 +62,9 @@ async function processMarkets(
             Position.AWAY,
             w3utils.toWei("1")
           )) / 1e18;
+        console.log(market.homeTeam + " vs " + market.awayTeam);
+        console.log("buyPriceImpactHome is " + buyPriceImpactHome);
+        console.log("buyPriceImpactAway is " + buyPriceImpactAway);
         if (
           buyPriceImpactHome >= skewImpactLimit &&
           buyPriceImpactAway >= skewImpactLimit
@@ -82,7 +85,18 @@ async function processMarkets(
             w3utils.toWei("1")
           )) / 1e18;
 
-        if (priceHome >= priceLowerLimit && priceHome <= priceUpperLimit) {
+        let skewImpact =
+          (await thalesAMMContract.buyPriceImpact(
+            market.address,
+            Position.HOME,
+            w3utils.toWei("1")
+          )) / 1e18;
+
+        if (
+          priceHome >= priceLowerLimit &&
+          priceHome <= priceUpperLimit &&
+          skewImpact < 0
+        ) {
           tradingMarkets.push({
             address: market.address,
             position: Position.HOME,
