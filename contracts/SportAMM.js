@@ -39,6 +39,18 @@ const sportAMMContract = {
           name: "_referrals",
           type: "address",
         },
+        {
+          indexed: false,
+          internalType: "address",
+          name: "_parlayAMM",
+          type: "address",
+        },
+        {
+          indexed: false,
+          internalType: "address",
+          name: "_wrapper",
+          type: "address",
+        },
       ],
       name: "AddressesUpdated",
       type: "event",
@@ -272,6 +284,19 @@ const sportAMMContract = {
         },
       ],
       name: "SetSportsPositionalMarketManager",
+      type: "event",
+    },
+    {
+      anonymous: false,
+      inputs: [
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "_threshold",
+          type: "uint256",
+        },
+      ],
+      name: "SetThresholdForOddsUpdate",
       type: "event",
     },
     {
@@ -575,6 +600,35 @@ const sportAMMContract = {
         },
       ],
       name: "buyFromAmmQuote",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "_quote",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "address",
+          name: "market",
+          type: "address",
+        },
+        {
+          internalType: "enum ISportsAMM.Position",
+          name: "position",
+          type: "uint8",
+        },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
+      ],
+      name: "buyFromAmmQuoteForParlayAMM",
       outputs: [
         {
           internalType: "uint256",
@@ -1114,6 +1168,25 @@ const sportAMMContract = {
       type: "function",
     },
     {
+      inputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
+      name: "safeBoxFeePerAddress",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
       inputs: [],
       name: "safeBoxImpact",
       outputs: [
@@ -1247,6 +1320,16 @@ const sportAMMContract = {
         {
           internalType: "address",
           name: "_referrals",
+          type: "address",
+        },
+        {
+          internalType: "address",
+          name: "_parlayAMM",
+          type: "address",
+        },
+        {
+          internalType: "address",
+          name: "_wrapper",
           type: "address",
         },
       ],
@@ -1420,11 +1503,42 @@ const sportAMMContract = {
       inputs: [
         {
           internalType: "address",
+          name: "_address",
+          type: "address",
+        },
+        {
+          internalType: "uint256",
+          name: "newFee",
+          type: "uint256",
+        },
+      ],
+      name: "setSafeBoxFeePerAddress",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "address",
           name: "_manager",
           type: "address",
         },
       ],
       name: "setSportsPositionalMarketManager",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "_threshold",
+          type: "uint256",
+        },
+      ],
+      name: "setThresholdForOddsUpdate",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",
@@ -1475,6 +1589,19 @@ const sportAMMContract = {
       type: "function",
     },
     {
+      inputs: [],
+      name: "thresholdForOddsUpdate",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
       inputs: [
         {
           internalType: "address",
@@ -1483,6 +1610,24 @@ const sportAMMContract = {
         },
       ],
       name: "transferOwnershipAtInit",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "address",
+          name: "_account",
+          type: "address",
+        },
+        {
+          internalType: "uint256",
+          name: "_amount",
+          type: "uint256",
+        },
+      ],
+      name: "updateParlayVolume",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",
@@ -1506,6 +1651,19 @@ const sportAMMContract = {
       outputs: [
         {
           internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "wrapper",
+      outputs: [
+        {
+          internalType: "contract ITherundownConsumerWrapper",
           name: "",
           type: "address",
         },

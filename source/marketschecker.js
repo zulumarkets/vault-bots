@@ -14,19 +14,19 @@ const ThalesAMM = require("../contracts/ThalesAMM.js");
 let tradingMarkets = [];
 
 const Position = {
-  HOME: 0,
-  AWAY: 1,
+  UP: 0,
+  DOWN: 1,
   DRAW: 2,
 };
 
 async function processMarkets(
-    priceLowerLimit,
-    priceUpperLimit,
-    roundEndTime,
-    skewImpactLimit
+  priceLowerLimit,
+  priceUpperLimit,
+  roundEndTime,
+  skewImpactLimit
 ) {
   console.log(
-      "--------------------Started processing markets-------------------"
+    "--------------------Started processing markets-------------------"
   );
 
   let minManurityValue = parseInt(new Date().getTime() / 1000);
@@ -37,84 +37,69 @@ async function processMarkets(
   });
 
   const thalesAMMContract = new ethers.Contract(
-      process.env.THALES_AMM_CONTRACT,
-      ThalesAMM.thalesAMMContract.abi,
-      wallet
+    process.env.THALES_AMM_CONTRACT,
+    ThalesAMM.thalesAMMContract.abi,
+    wallet
   );
 
   console.log("Processing a total of " + positionalMarkets.length + " markets");
   let i = 0;
 
   for (const market of positionalMarkets) {
-    console.log("Processing " + i + " market");
+    console.log("Processing " + i + " market " + market.address);
     i++;
     if (inTradingWeek(market.maturityDate, roundEndTime)) {
       console.log("eligible");
       try {
-        let buyPriceImpactHome =
-            (await thalesAMMContract.buyPriceImpact(
-                market.address,
-                Position.HOME,
-                w3utils.toWei("1")
-            )) / 1e18;
-        let buyPriceImpactAway =
-            (await thalesAMMContract.buyPriceImpact(
-                market.address,
-                Position.AWAY,
-                w3utils.toWei("1")
-            )) / 1e18;
-        console.log("buyPriceImpactHome is " + buyPriceImpactHome);
-        console.log("buyPriceImpactAway is " + buyPriceImpactAway);
+        let buyPriceImpactUP =
+          (await thalesAMMContract.buyPriceImpact(
+            market.address,
+            Position.UP,
+            w3utils.toWei("1")
+          )) / 1e18;
+        let buyPriceImpactDOWN =
+          (await thalesAMMContract.buyPriceImpact(
+            market.address,
+            Position.DOWN,
+            w3utils.toWei("1")
+          )) / 1e18;
+        console.log("buyPriceImpactUP is " + buyPriceImpactUP);
+        console.log("buyPriceImpactDOWN is " + buyPriceImpactDOWN);
         if (
-            buyPriceImpactHome >= skewImpactLimit &&
-            buyPriceImpactAway >= skewImpactLimit
+          buyPriceImpactUP >= skewImpactLimit &&
+          buyPriceImpactDOWN >= skewImpactLimit
         ) {
           continue;
         }
 
-        let priceHome =
-            (await thalesAMMContract.buyFromAmmQuote(
-                market.address,
-                Position.HOME,
-                w3utils.toWei("1")
-            )) / 1e18;
-        let priceAway =
-            (await thalesAMMContract.buyFromAmmQuote(
-                market.address,
-                Position.AWAY,
-                w3utils.toWei("1")
-            )) / 1e18;
-
-        let skewImpact =
-            (await thalesAMMContract.buyPriceImpact(
-                market.address,
-                Position.HOME,
-                w3utils.toWei("1")
-            )) / 1e18;
+        let priceUP =
+          (await thalesAMMContract.price(market.address, Position.UP)) / 1e18;
+        let priceDOWN =
+          (await thalesAMMContract.price(market.address, Position.DOWN)) / 1e18;
 
         if (
-            priceHome >= priceLowerLimit &&
-            priceHome <= priceUpperLimit &&
-            skewImpact < 0
+          priceUP >= priceLowerLimit &&
+          priceUP <= priceUpperLimit &&
+          buyPriceImpactUP < skewImpactLimit
         ) {
           tradingMarkets.push({
             address: market.address,
-            position: Position.HOME,
+            position: Position.UP,
             currencyKey: market.currencyKey,
-            price: priceHome,
+            price: priceUP,
           });
-          console.log(market.address, "PriceHome", priceHome);
+          console.log(market.address, "PriceUP", priceUP);
         } else if (
-            priceAway >= priceLowerLimit &&
-            priceAway <= priceUpperLimit
+          priceDOWN >= priceLowerLimit &&
+          priceDOWN <= priceUpperLimit
         ) {
           tradingMarkets.push({
             address: market.address,
-            position: Position.AWAY,
+            position: Position.DOWN,
             currencyKey: market.currencyKey,
-            price: priceAway,
+            price: priceDOWN,
           });
-          console.log(market.address, "PriceAway", priceAway);
+          console.log(market.address, "PriceDOWN", priceDOWN);
         } else {
           continue;
         }
@@ -125,7 +110,7 @@ async function processMarkets(
   }
 
   console.log(
-      "--------------------Finished processing markets-------------------"
+    "--------------------Finished processing markets-------------------"
   );
 
   return tradingMarkets;

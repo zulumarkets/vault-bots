@@ -7,6 +7,7 @@ const wallet = new ethers.Wallet(constants.privateKey, constants.etherprovider);
 
 const Vault = require("../contracts/SportVault.js");
 const SportAMM = require("../contracts/SportAMM.js");
+const SportMarket = require("../contracts/SportMarket.js");
 const marketschecker = require("./sport_marketschecker.js");
 
 const { performance } = require("perf_hooks");
@@ -85,25 +86,22 @@ async function trade(
     skewImpactLimit
   );
 
+  let processedInThisRound = new Set();
   for (const key in tradingMarkets) {
     let market = tradingMarkets[key];
 
-    let tradedInRoundAlready = await VaultContract.isTradingMarketInARound(
-      round,
-      market.address
+    let halveAmount = false;
+    let othersLikeThis = tradingMarkets.filter(
+      (k) => k.address == market.address
     );
-    if (tradedInRoundAlready) {
-      let tradedBeforePosition =
-        await VaultContract.tradingMarketPositionPerRound(
-          round,
-          market.address
-        );
-      if (tradedBeforePosition != market.position) {
-        continue;
+    if (othersLikeThis.length > 1) {
+      if (!processedInThisRound.has(market.address)) {
+        halveAmount = true;
+        processedInThisRound.add(market.address);
       }
     }
 
-    let result = await amountToBuy(market, round, skewImpactLimit);
+    let result = await amountToBuy(market, round, skewImpactLimit, halveAmount);
 
     console.log("Trying to buy amount", result.amount);
     console.log("Quote", result.quote);
@@ -130,7 +128,7 @@ async function trade(
   console.log("Finished trading markets  ");
 }
 
-async function amountToBuy(market, round, skewImpactLimit) {
+async function amountToBuy(market, round, skewImpactLimit, halveAmount) {
   const minTradeAmount = (await VaultContract.minTradeAmount()) / 1e18;
   let amount = 0,
     finalAmount = 0,
@@ -144,9 +142,13 @@ async function amountToBuy(market, round, skewImpactLimit) {
       market.position
     )) / 1e18;
 
-  const availableAllocationPerAsset =
+  let availableAllocationPerAsset =
     (await VaultContract.getAvailableAllocationForMarket(market.address)) /
     1e18;
+  if (halveAmount) {
+    availableAllocationPerAsset = availableAllocationPerAsset / 2;
+  }
+
   if (maxAmount < minTradeAmount) {
     return { amount: 0, quote: 0, position: market.position };
   }

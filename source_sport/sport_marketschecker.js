@@ -62,40 +62,51 @@ async function processMarkets(
             Position.AWAY,
             w3utils.toWei("1")
           )) / 1e18;
+        let buyPriceImpactDraw =
+          (await thalesAMMContract.buyPriceImpact(
+            market.address,
+            Position.DRAW,
+            w3utils.toWei("1")
+          )) / 1e18;
         console.log(market.homeTeam + " vs " + market.awayTeam);
         console.log("buyPriceImpactHome is " + buyPriceImpactHome);
         console.log("buyPriceImpactAway is " + buyPriceImpactAway);
+        console.log("buyPriceImpactDraw is " + buyPriceImpactDraw);
         if (
           buyPriceImpactHome >= skewImpactLimit &&
-          buyPriceImpactAway >= skewImpactLimit
+          buyPriceImpactAway >= skewImpactLimit &&
+          buyPriceImpactDraw >= skewImpactLimit
         ) {
           continue;
         }
 
         let priceHome =
-          (await thalesAMMContract.buyFromAmmQuote(
-            market.address,
-            Position.HOME,
-            w3utils.toWei("1")
-          )) / 1e18;
+          (await thalesAMMContract.obtainOdds(market.address, Position.HOME)) /
+          1e18;
         let priceAway =
-          (await thalesAMMContract.buyFromAmmQuote(
-            market.address,
-            Position.AWAY,
-            w3utils.toWei("1")
-          )) / 1e18;
+          (await thalesAMMContract.obtainOdds(market.address, Position.AWAY)) /
+          1e18;
+        let priceDraw =
+          (await thalesAMMContract.obtainOdds(market.address, Position.DRAW)) /
+          1e18;
 
-        let skewImpact =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.HOME,
-            w3utils.toWei("1")
-          )) / 1e18;
-
+        if (
+          priceDraw >= priceLowerLimit &&
+          priceDraw <= priceUpperLimit &&
+          buyPriceImpactDraw < skewImpactLimit
+        ) {
+          tradingMarkets.push({
+            address: market.address,
+            position: Position.DRAW,
+            currencyKey: market.currencyKey,
+            price: priceDraw,
+          });
+          console.log(market.address, "priceDraw", priceDraw);
+        }
         if (
           priceHome >= priceLowerLimit &&
           priceHome <= priceUpperLimit &&
-          skewImpact < 0
+          buyPriceImpactHome < skewImpactLimit
         ) {
           tradingMarkets.push({
             address: market.address,
@@ -104,9 +115,11 @@ async function processMarkets(
             price: priceHome,
           });
           console.log(market.address, "PriceHome", priceHome);
-        } else if (
+        }
+        if (
           priceAway >= priceLowerLimit &&
-          priceAway <= priceUpperLimit
+          priceAway <= priceUpperLimit &&
+          buyPriceImpactAway < skewImpactLimit
         ) {
           tradingMarkets.push({
             address: market.address,
@@ -115,8 +128,6 @@ async function processMarkets(
             price: priceAway,
           });
           console.log(market.address, "PriceAway", priceAway);
-        } else {
-          continue;
         }
       } catch (e) {
         console.log(e);
