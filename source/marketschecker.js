@@ -13,6 +13,8 @@ const ThalesAMM = require("../contracts/ThalesAMM.js");
 
 let tradingMarkets = [];
 
+let marketsToIgnore = new Set();
+
 const Position = {
   UP: 0,
   DOWN: 1,
@@ -48,7 +50,10 @@ async function processMarkets(
   for (const market of positionalMarkets) {
     console.log("Processing " + i + " market " + market.address);
     i++;
-    if (inTradingWeek(market.maturityDate, roundEndTime)) {
+    if (
+      !marketsToIgnore.has(market.address) &&
+      inTradingWeek(market.maturityDate, roundEndTime)
+    ) {
       console.log("eligible");
       try {
         let buyPriceImpactUP =
@@ -106,6 +111,8 @@ async function processMarkets(
       } catch (e) {
         console.log(e);
       }
+    } else {
+      marketsToIgnore.add(market.address);
     }
   }
 

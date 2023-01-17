@@ -13,6 +13,8 @@ const SportAMM = require("../contracts/SportAMM.js");
 
 let tradingMarkets = [];
 
+let marketsToIgnore = new Set();
+
 const Position = {
   HOME: 0,
   AWAY: 1,
@@ -47,7 +49,10 @@ async function processMarkets(
   for (const market of positionalMarkets) {
     console.log("Processing " + i + " market");
     i++;
-    if (inTradingWeek(market.maturityDate, roundEndTime)) {
+    if (
+      !marketsToIgnore.has(market.address) &&
+      inTradingWeek(market.maturityDate, roundEndTime)
+    ) {
       console.log("eligible");
       try {
         let buyPriceImpactHome =
@@ -132,6 +137,8 @@ async function processMarkets(
       } catch (e) {
         console.log(e);
       }
+    } else {
+      marketsToIgnore.add(market.address);
     }
   }
 
