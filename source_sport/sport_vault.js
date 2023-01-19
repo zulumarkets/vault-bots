@@ -29,6 +29,7 @@ const VaultContract = new ethers.Contract(
 );
 
 async function processVault() {
+  let gasp = await constants.etherprovider.getGasPrice();
   const round = await VaultContract.round();
   const roundEndTime = (await VaultContract.getCurrentRoundEnd()).toString();
   let closingDate = new Date(roundEndTime * 1000.0).getTime();
@@ -43,7 +44,8 @@ async function processVault() {
     priceUpperLimit,
     skewImpactLimit,
     round,
-    closingDate
+    closingDate,
+    gasp
   );
 
   await closeRound(closingDate);
@@ -111,7 +113,11 @@ async function trade(
         let tx = await VaultContract.trade(
           market.address,
           w3utils.toWei(result.amount.toString()),
-          result.position
+          result.position,
+          {
+            gasLimit: 10000000,
+            gasPrice: gasp.add(gasp.div(5)),
+          }
         );
         let receipt = await tx.wait();
         let transactionHash = receipt.transactionHash;
