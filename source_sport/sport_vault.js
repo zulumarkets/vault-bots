@@ -79,7 +79,8 @@ async function trade(
   priceUpperLimit,
   skewImpactLimit,
   round,
-  roundEndTime
+  roundEndTime,
+  gasp
 ) {
   let tradingMarkets = await marketschecker.processMarkets(
     priceLowerLimit,
