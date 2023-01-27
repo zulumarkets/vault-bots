@@ -9,7 +9,7 @@ const wallet = new ethers.Wallet(constants.privateKey, constants.etherprovider);
 
 const { performance } = require("perf_hooks");
 
-const SportAMM = require("../contracts/SportAMM.js");
+const SportPositionalMarketDataContract = require("../contracts/SportPositionalMarketData.js");
 
 let tradingMarkets = [];
 
@@ -37,11 +37,17 @@ async function processMarkets(
     isResolved: false,
   });
 
-  const thalesAMMContract = new ethers.Contract(
-    process.env.SPORT_AMM_CONTRACT,
-    SportAMM.sportAMMContract.abi,
+  const sportPositionalMarketDataContract = new ethers.Contract(
+    process.env.SPORT_POSITIONAL_MARKET_DATA_CONTRACT,
+    SportPositionalMarketDataContract.sportPositionalMarketDataContract.abi,
     wallet
   );
+
+  const [oddsForAllActiveMarkets, priceImpactForAllActiveMarkets] =
+    await Promise.all([
+      sportPositionalMarketDataContract.getOddsForAllActiveMarkets(),
+      sportPositionalMarketDataContract.getPriceImpactForAllActiveMarkets(),
+    ]);
 
   console.log("Processing a total of " + positionalMarkets.length + " markets");
   let i = 0;
@@ -49,30 +55,28 @@ async function processMarkets(
   for (const market of positionalMarkets) {
     console.log("Processing " + i + " market");
     i++;
+
+    const marketOdds = oddsForAllActiveMarkets.find(
+      (odds) => odds.market.toLowerCase() === market.address
+    );
+    const marketPriceImpact = priceImpactForAllActiveMarkets.find(
+      (priceImpact) => priceImpact.market.toLowerCase() === market.address
+    );
+
     if (
       !marketsToIgnore.has(market.address) &&
-      inTradingWeek(market.maturityDate, roundEndTime)
+      inTradingWeek(market.maturityDate, roundEndTime) &&
+      marketOdds &&
+      marketPriceImpact
     ) {
       console.log("eligible");
       try {
         let buyPriceImpactHome =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.HOME,
-            w3utils.toWei("1")
-          )) / 1e18;
+          marketPriceImpact.priceImpact[Position.HOME] / 1e18;
         let buyPriceImpactAway =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.AWAY,
-            w3utils.toWei("1")
-          )) / 1e18;
+          marketPriceImpact.priceImpact[Position.AWAY] / 1e18;
         let buyPriceImpactDraw =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.DRAW,
-            w3utils.toWei("1")
-          )) / 1e18;
+          (marketPriceImpact.priceImpact[Position.DRAW] || 0) / 1e18;
         console.log(market.homeTeam + " vs " + market.awayTeam);
         console.log("buyPriceImpactHome is " + buyPriceImpactHome);
         console.log("buyPriceImpactAway is " + buyPriceImpactAway);
@@ -85,15 +89,9 @@ async function processMarkets(
           continue;
         }
 
-        let priceHome =
-          (await thalesAMMContract.obtainOdds(market.address, Position.HOME)) /
-          1e18;
-        let priceAway =
-          (await thalesAMMContract.obtainOdds(market.address, Position.AWAY)) /
-          1e18;
-        let priceDraw =
-          (await thalesAMMContract.obtainOdds(market.address, Position.DRAW)) /
-          1e18;
+        let priceHome = marketOdds.odds[Position.HOME] / 1e18;
+        let priceAway = marketOdds.odds[Position.AWAY] / 1e18;
+        let priceDraw = (marketOdds.odds[Position.DRAW] || 0) / 1e18;
 
         if (
           priceDraw >= priceLowerLimit &&

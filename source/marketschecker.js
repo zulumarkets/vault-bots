@@ -9,7 +9,7 @@ const wallet = new ethers.Wallet(constants.privateKey, constants.etherprovider);
 
 const { performance } = require("perf_hooks");
 
-const ThalesAMM = require("../contracts/ThalesAMM.js");
+const PositionalMarketDataContract = require("../contracts/PositionalMarketData.js");
 
 let tradingMarkets = [];
 
@@ -38,11 +38,17 @@ async function processMarkets(
     minMaturity: minManurityValue,
   });
 
-  const thalesAMMContract = new ethers.Contract(
-    process.env.THALES_AMM_CONTRACT,
-    ThalesAMM.thalesAMMContract.abi,
+  const positionalMarketDataContract = new ethers.Contract(
+    process.env.POSITIONAL_MARKET_DATA_CONTRACT,
+    PositionalMarketDataContract.positionalMarketDataContract.abi,
     wallet
   );
+
+  const [pricesForAllActiveMarkets, priceImpactForAllActiveMarkets] =
+    await Promise.all([
+      positionalMarketDataContract.getPricesForAllActiveMarkets(),
+      positionalMarketDataContract.getPriceImpactForAllActiveMarkets(),
+    ]);
 
   console.log("Processing a total of " + positionalMarkets.length + " markets");
   let i = 0;
@@ -50,24 +56,24 @@ async function processMarkets(
   for (const market of positionalMarkets) {
     console.log("Processing " + i + " market " + market.address);
     i++;
+
+    const marketPrices = pricesForAllActiveMarkets.find(
+      (prices) => prices.market.toLowerCase() === market.address
+    );
+    const marketPriceImpact = priceImpactForAllActiveMarkets.find(
+      (priceImpact) => priceImpact.market.toLowerCase() === market.address
+    );
+
     if (
       !marketsToIgnore.has(market.address) &&
-      inTradingWeek(market.maturityDate, roundEndTime)
+      inTradingWeek(market.maturityDate, roundEndTime) &&
+      marketPrices &&
+      marketPriceImpact
     ) {
       console.log("eligible");
       try {
-        let buyPriceImpactUP =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.UP,
-            w3utils.toWei("1")
-          )) / 1e18;
-        let buyPriceImpactDOWN =
-          (await thalesAMMContract.buyPriceImpact(
-            market.address,
-            Position.DOWN,
-            w3utils.toWei("1")
-          )) / 1e18;
+        let buyPriceImpactUP = marketPriceImpact.upPriceImpact / 1e18;
+        let buyPriceImpactDOWN = marketPriceImpact.downPriceImpact / 1e18;
         console.log("buyPriceImpactUP is " + buyPriceImpactUP);
         console.log("buyPriceImpactDOWN is " + buyPriceImpactDOWN);
         if (
@@ -77,10 +83,8 @@ async function processMarkets(
           continue;
         }
 
-        let priceUP =
-          (await thalesAMMContract.price(market.address, Position.UP)) / 1e18;
-        let priceDOWN =
-          (await thalesAMMContract.price(market.address, Position.DOWN)) / 1e18;
+        let priceUP = marketPrices.upPrice / 1e18;
+        let priceDOWN = marketPrices.downPrice / 1e18;
 
         if (
           priceUP >= priceLowerLimit &&
