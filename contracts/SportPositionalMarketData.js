@@ -3,45 +3,122 @@ const sportPositionalMarketDataContract = {
     {
       anonymous: false,
       inputs: [
-        { indexed: false, internalType: "address", name: "oldOwner", type: "address" },
-        { indexed: false, internalType: "address", name: "newOwner", type: "address" },
+        {
+          indexed: false,
+          internalType: "address",
+          name: "oldOwner",
+          type: "address",
+        },
+        {
+          indexed: false,
+          internalType: "address",
+          name: "newOwner",
+          type: "address",
+        },
       ],
       name: "OwnerChanged",
       type: "event",
     },
     {
       anonymous: false,
-      inputs: [{ indexed: false, internalType: "address", name: "newOwner", type: "address" }],
+      inputs: [
+        {
+          indexed: false,
+          internalType: "address",
+          name: "newOwner",
+          type: "address",
+        },
+      ],
       name: "OwnerNominated",
       type: "event",
     },
     {
       anonymous: false,
-      inputs: [{ indexed: false, internalType: "bool", name: "isPaused", type: "bool" }],
+      inputs: [
+        {
+          indexed: false,
+          internalType: "bool",
+          name: "isPaused",
+          type: "bool",
+        },
+      ],
       name: "PauseChanged",
       type: "event",
     },
     {
       anonymous: false,
-      inputs: [{ indexed: false, internalType: "address", name: "_sportsAMM", type: "address" }],
+      inputs: [
+        {
+          indexed: false,
+          internalType: "address",
+          name: "_sportsAMM",
+          type: "address",
+        },
+      ],
       name: "SetSportsAMM",
       type: "event",
     },
     {
       anonymous: false,
-      inputs: [{ indexed: false, internalType: "address", name: "_manager", type: "address" }],
+      inputs: [
+        {
+          indexed: false,
+          internalType: "address",
+          name: "_manager",
+          type: "address",
+        },
+      ],
       name: "SportPositionalMarketManagerChanged",
       type: "event",
     },
-    { inputs: [], name: "acceptOwnership", outputs: [], stateMutability: "nonpayable", type: "function" },
+    {
+      inputs: [],
+      name: "acceptOwnership",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "getBaseOddsForAllActiveMarkets",
+      outputs: [
+        {
+          components: [
+            {
+              internalType: "address",
+              name: "market",
+              type: "address",
+            },
+            {
+              internalType: "uint256[]",
+              name: "odds",
+              type: "uint256[]",
+            },
+          ],
+          internalType: "struct SportPositionalMarketData.ActiveMarketsOdds[]",
+          name: "",
+          type: "tuple[]",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
     {
       inputs: [],
       name: "getOddsForAllActiveMarkets",
       outputs: [
         {
           components: [
-            { internalType: "address", name: "market", type: "address" },
-            { internalType: "uint256[]", name: "odds", type: "uint256[]" },
+            {
+              internalType: "address",
+              name: "market",
+              type: "address",
+            },
+            {
+              internalType: "uint256[]",
+              name: "odds",
+              type: "uint256[]",
+            },
           ],
           internalType: "struct SportPositionalMarketData.ActiveMarketsOdds[]",
           name: "",
@@ -57,10 +134,19 @@ const sportPositionalMarketDataContract = {
       outputs: [
         {
           components: [
-            { internalType: "address", name: "market", type: "address" },
-            { internalType: "int256[]", name: "priceImpact", type: "int256[]" },
+            {
+              internalType: "address",
+              name: "market",
+              type: "address",
+            },
+            {
+              internalType: "int256[]",
+              name: "priceImpact",
+              type: "int256[]",
+            },
           ],
-          internalType: "struct SportPositionalMarketData.ActiveMarketsPriceImpact[]",
+          internalType:
+            "struct SportPositionalMarketData.ActiveMarketsPriceImpact[]",
           name: "",
           type: "tuple[]",
         },
@@ -69,7 +155,13 @@ const sportPositionalMarketDataContract = {
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "_owner", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "_owner",
+          type: "address",
+        },
+      ],
       name: "initialize",
       outputs: [],
       stateMutability: "nonpayable",
@@ -78,19 +170,37 @@ const sportPositionalMarketDataContract = {
     {
       inputs: [],
       name: "lastPauseTime",
-      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
       inputs: [],
       name: "manager",
-      outputs: [{ internalType: "address", name: "", type: "address" }],
+      outputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "_owner", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "_owner",
+          type: "address",
+        },
+      ],
       name: "nominateNewOwner",
       outputs: [],
       stateMutability: "nonpayable",
@@ -99,47 +209,89 @@ const sportPositionalMarketDataContract = {
     {
       inputs: [],
       name: "nominatedOwner",
-      outputs: [{ internalType: "address", name: "", type: "address" }],
+      outputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
       inputs: [],
       name: "owner",
-      outputs: [{ internalType: "address", name: "", type: "address" }],
+      outputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
       inputs: [],
       name: "paused",
-      outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      outputs: [
+        {
+          internalType: "bool",
+          name: "",
+          type: "bool",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "_owner", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "_owner",
+          type: "address",
+        },
+      ],
       name: "setOwner",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",
     },
     {
-      inputs: [{ internalType: "bool", name: "_paused", type: "bool" }],
+      inputs: [
+        {
+          internalType: "bool",
+          name: "_paused",
+          type: "bool",
+        },
+      ],
       name: "setPaused",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "_manager", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "_manager",
+          type: "address",
+        },
+      ],
       name: "setSportPositionalMarketManager",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "_sportsAMM", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "_sportsAMM",
+          type: "address",
+        },
+      ],
       name: "setSportsAMM",
       outputs: [],
       stateMutability: "nonpayable",
@@ -148,12 +300,24 @@ const sportPositionalMarketDataContract = {
     {
       inputs: [],
       name: "sportsAMM",
-      outputs: [{ internalType: "address", name: "", type: "address" }],
+      outputs: [
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
       stateMutability: "view",
       type: "function",
     },
     {
-      inputs: [{ internalType: "address", name: "proxyAddress", type: "address" }],
+      inputs: [
+        {
+          internalType: "address",
+          name: "proxyAddress",
+          type: "address",
+        },
+      ],
       name: "transferOwnershipAtInit",
       outputs: [],
       stateMutability: "nonpayable",

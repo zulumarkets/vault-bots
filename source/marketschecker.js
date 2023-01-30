@@ -46,7 +46,7 @@ async function processMarkets(
 
   const [pricesForAllActiveMarkets, priceImpactForAllActiveMarkets] =
     await Promise.all([
-      positionalMarketDataContract.getPricesForAllActiveMarkets(),
+      positionalMarketDataContract.getBasePricesForAllActiveMarkets(),
       positionalMarketDataContract.getPriceImpactForAllActiveMarkets(),
     ]);
 

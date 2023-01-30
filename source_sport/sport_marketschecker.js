@@ -45,7 +45,7 @@ async function processMarkets(
 
   const [oddsForAllActiveMarkets, priceImpactForAllActiveMarkets] =
     await Promise.all([
-      sportPositionalMarketDataContract.getOddsForAllActiveMarkets(),
+      sportPositionalMarketDataContract.getBaseOddsForAllActiveMarkets(),
       sportPositionalMarketDataContract.getPriceImpactForAllActiveMarkets(),
     ]);
 
