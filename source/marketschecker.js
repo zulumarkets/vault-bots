@@ -11,8 +11,6 @@ const { performance } = require("perf_hooks");
 
 const PositionalMarketDataContract = require("../contracts/PositionalMarketData.js");
 
-let tradingMarkets = [];
-
 let marketsToIgnore = new Set();
 
 const Position = {
@@ -27,6 +25,8 @@ async function processMarkets(
   roundEndTime,
   skewImpactLimit
 ) {
+  let tradingMarkets = [];
+
   console.log(
     "--------------------Started processing markets-------------------"
   );
@@ -66,54 +66,54 @@ async function processMarkets(
 
     if (
       !marketsToIgnore.has(market.address) &&
-      inTradingWeek(market.maturityDate, roundEndTime) &&
-      marketPrices &&
-      marketPriceImpact
+      inTradingWeek(market.maturityDate, roundEndTime)
     ) {
-      console.log("eligible");
-      try {
-        let buyPriceImpactUP = marketPriceImpact.upPriceImpact / 1e18;
-        let buyPriceImpactDOWN = marketPriceImpact.downPriceImpact / 1e18;
-        console.log("buyPriceImpactUP is " + buyPriceImpactUP);
-        console.log("buyPriceImpactDOWN is " + buyPriceImpactDOWN);
-        if (
-          buyPriceImpactUP >= skewImpactLimit &&
-          buyPriceImpactDOWN >= skewImpactLimit
-        ) {
-          continue;
-        }
+      if (marketPrices && marketPriceImpact) {
+        console.log("eligible");
+        try {
+          let buyPriceImpactUP = marketPriceImpact.upPriceImpact / 1e18;
+          let buyPriceImpactDOWN = marketPriceImpact.downPriceImpact / 1e18;
+          console.log("buyPriceImpactUP is " + buyPriceImpactUP);
+          console.log("buyPriceImpactDOWN is " + buyPriceImpactDOWN);
+          if (
+            buyPriceImpactUP >= skewImpactLimit &&
+            buyPriceImpactDOWN >= skewImpactLimit
+          ) {
+            continue;
+          }
 
-        let priceUP = marketPrices.upPrice / 1e18;
-        let priceDOWN = marketPrices.downPrice / 1e18;
+          let priceUP = marketPrices.upPrice / 1e18;
+          let priceDOWN = marketPrices.downPrice / 1e18;
 
-        if (
-          priceUP >= priceLowerLimit &&
-          priceUP <= priceUpperLimit &&
-          buyPriceImpactUP < skewImpactLimit
-        ) {
-          tradingMarkets.push({
-            address: market.address,
-            position: Position.UP,
-            currencyKey: market.currencyKey,
-            price: priceUP,
-          });
-          console.log(market.address, "PriceUP", priceUP);
-        } else if (
-          priceDOWN >= priceLowerLimit &&
-          priceDOWN <= priceUpperLimit
-        ) {
-          tradingMarkets.push({
-            address: market.address,
-            position: Position.DOWN,
-            currencyKey: market.currencyKey,
-            price: priceDOWN,
-          });
-          console.log(market.address, "PriceDOWN", priceDOWN);
-        } else {
-          continue;
+          if (
+            priceUP > priceLowerLimit &&
+            priceUP < priceUpperLimit &&
+            buyPriceImpactUP < skewImpactLimit
+          ) {
+            tradingMarkets.push({
+              address: market.address,
+              position: Position.UP,
+              currencyKey: market.currencyKey,
+              price: priceUP,
+            });
+            console.log(market.address, "PriceUP", priceUP);
+          } else if (
+            priceDOWN > priceLowerLimit &&
+            priceDOWN < priceUpperLimit
+          ) {
+            tradingMarkets.push({
+              address: market.address,
+              position: Position.DOWN,
+              currencyKey: market.currencyKey,
+              price: priceDOWN,
+            });
+            console.log(market.address, "PriceDOWN", priceDOWN);
+          } else {
+            continue;
+          }
+        } catch (e) {
+          console.log(e);
         }
-      } catch (e) {
-        console.log(e);
       }
     } else {
       marketsToIgnore.add(market.address);
