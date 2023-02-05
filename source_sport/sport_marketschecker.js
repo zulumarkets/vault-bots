@@ -11,8 +11,6 @@ const { performance } = require("perf_hooks");
 
 const SportPositionalMarketDataContract = require("../contracts/SportPositionalMarketData.js");
 
-let marketsToIgnore = new Set();
-
 const Position = {
   HOME: 0,
   AWAY: 1,
@@ -64,79 +62,76 @@ async function processMarkets(
     );
 
     if (
-      !marketsToIgnore.has(market.address) &&
-      inTradingWeek(market.maturityDate, roundEndTime)
+      inTradingWeek(market.maturityDate, roundEndTime) &&
+      marketOdds &&
+      marketPriceImpact
     ) {
-      if (marketOdds && marketPriceImpact) {
-        console.log("eligible");
-        try {
-          let buyPriceImpactHome =
-            marketPriceImpact.priceImpact[Position.HOME] / 1e18;
-          let buyPriceImpactAway =
-            marketPriceImpact.priceImpact[Position.AWAY] / 1e18;
-          let buyPriceImpactDraw =
-            (marketPriceImpact.priceImpact[Position.DRAW] || 0) / 1e18;
-          console.log(market.homeTeam + " vs " + market.awayTeam);
-          console.log("buyPriceImpactHome is " + buyPriceImpactHome);
-          console.log("buyPriceImpactAway is " + buyPriceImpactAway);
-          console.log("buyPriceImpactDraw is " + buyPriceImpactDraw);
-          if (
-            buyPriceImpactHome >= skewImpactLimit &&
-            buyPriceImpactAway >= skewImpactLimit &&
-            buyPriceImpactDraw >= skewImpactLimit
-          ) {
-            continue;
-          }
-
-          let priceHome = marketOdds.odds[Position.HOME] / 1e18;
-          let priceAway = marketOdds.odds[Position.AWAY] / 1e18;
-          let priceDraw = (marketOdds.odds[Position.DRAW] || 0) / 1e18;
-
-          if (
-            priceDraw > priceLowerLimit &&
-            priceDraw < priceUpperLimit &&
-            buyPriceImpactDraw < skewImpactLimit
-          ) {
-            tradingMarkets.push({
-              address: market.address,
-              position: Position.DRAW,
-              currencyKey: market.currencyKey,
-              price: priceDraw,
-            });
-            console.log(market.address, "priceDraw", priceDraw);
-          }
-          if (
-            priceHome > priceLowerLimit &&
-            priceHome < priceUpperLimit &&
-            buyPriceImpactHome < skewImpactLimit
-          ) {
-            tradingMarkets.push({
-              address: market.address,
-              position: Position.HOME,
-              currencyKey: market.currencyKey,
-              price: priceHome,
-            });
-            console.log(market.address, "PriceHome", priceHome);
-          }
-          if (
-            priceAway > priceLowerLimit &&
-            priceAway < priceUpperLimit &&
-            buyPriceImpactAway < skewImpactLimit
-          ) {
-            tradingMarkets.push({
-              address: market.address,
-              position: Position.AWAY,
-              currencyKey: market.currencyKey,
-              price: priceAway,
-            });
-            console.log(market.address, "PriceAway", priceAway);
-          }
-        } catch (e) {
-          console.log(e);
+      console.log("eligible");
+      try {
+        let buyPriceImpactHome =
+          marketPriceImpact.priceImpact[Position.HOME] / 1e18;
+        let buyPriceImpactAway =
+          marketPriceImpact.priceImpact[Position.AWAY] / 1e18;
+        let buyPriceImpactDraw =
+          (marketPriceImpact.priceImpact[Position.DRAW] || 0) / 1e18;
+        console.log(market.homeTeam + " vs " + market.awayTeam);
+        console.log("buyPriceImpactHome is " + buyPriceImpactHome);
+        console.log("buyPriceImpactAway is " + buyPriceImpactAway);
+        console.log("buyPriceImpactDraw is " + buyPriceImpactDraw);
+        if (
+          buyPriceImpactHome >= skewImpactLimit &&
+          buyPriceImpactAway >= skewImpactLimit &&
+          buyPriceImpactDraw >= skewImpactLimit
+        ) {
+          continue;
         }
+
+        let priceHome = marketOdds.odds[Position.HOME] / 1e18;
+        let priceAway = marketOdds.odds[Position.AWAY] / 1e18;
+        let priceDraw = (marketOdds.odds[Position.DRAW] || 0) / 1e18;
+
+        if (
+          priceDraw > priceLowerLimit &&
+          priceDraw < priceUpperLimit &&
+          buyPriceImpactDraw < skewImpactLimit
+        ) {
+          tradingMarkets.push({
+            address: market.address,
+            position: Position.DRAW,
+            currencyKey: market.currencyKey,
+            price: priceDraw,
+          });
+          console.log(market.address, "priceDraw", priceDraw);
+        }
+        if (
+          priceHome > priceLowerLimit &&
+          priceHome < priceUpperLimit &&
+          buyPriceImpactHome < skewImpactLimit
+        ) {
+          tradingMarkets.push({
+            address: market.address,
+            position: Position.HOME,
+            currencyKey: market.currencyKey,
+            price: priceHome,
+          });
+          console.log(market.address, "PriceHome", priceHome);
+        }
+        if (
+          priceAway > priceLowerLimit &&
+          priceAway < priceUpperLimit &&
+          buyPriceImpactAway < skewImpactLimit
+        ) {
+          tradingMarkets.push({
+            address: market.address,
+            position: Position.AWAY,
+            currencyKey: market.currencyKey,
+            price: priceAway,
+          });
+          console.log(market.address, "PriceAway", priceAway);
+        }
+      } catch (e) {
+        console.log(e);
       }
-    } else {
-      marketsToIgnore.add(market.address);
     }
   }
 
@@ -155,7 +150,10 @@ function delay(time) {
 
 function inTradingWeek(maturityDate, roundEndTime) {
   const now = Date.now();
-  if (maturityDate > now && maturityDate < roundEndTime) {
+  if (
+    Number(maturityDate) > Number(now) &&
+    Number(maturityDate) < Number(roundEndTime) * 1000
+  ) {
     return true;
   }
   return false;
