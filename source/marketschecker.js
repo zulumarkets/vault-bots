@@ -95,7 +95,11 @@ async function processMarkets(
             price: priceUP,
           });
           console.log(market.address, "PriceUP", priceUP);
-        } else if (priceDOWN > priceLowerLimit && priceDOWN < priceUpperLimit) {
+        } else if (
+          priceDOWN > priceLowerLimit &&
+          priceDOWN < priceUpperLimit &&
+          buyPriceImpactDOWN < skewImpactLimit
+        ) {
           tradingMarkets.push({
             address: market.address,
             position: Position.DOWN,
