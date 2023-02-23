@@ -25,14 +25,8 @@ RUN npm install
 COPY . .
 
 EXPOSE 3001
-CMD [ "node", "index.js" ]
+CMD [ "node", "index_sport.js" ]
 #scripts/exersizeAMMOrders.js
 
-#thalesmarket/buybackoor
-#thalesmarket/exerciser
-#thalesmarket/rangedmarketscreator
-#thalesmarket/overtimecreator
-#thalesmarket/overtimeresolver
-#thalesmarket/sportexercizer
-#thalesmarket/stakingcloser
-#thalesmarket/resolver
+#thalesmarket/ammvault
+#thalesmarket/sportsvault
