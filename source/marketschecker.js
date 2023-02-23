@@ -131,10 +131,7 @@ function delay(time) {
 
 function inTradingWeek(maturityDate, roundEndTime) {
   const now = Date.now();
-  if (
-    Number(maturityDate) > Number(now) &&
-    Number(maturityDate) < Number(roundEndTime) * 1000
-  ) {
+  if (maturityDate > now && maturityDate < roundEndTime) {
     return true;
   }
   return false;
