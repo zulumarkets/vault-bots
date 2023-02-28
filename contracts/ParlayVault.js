@@ -57,11 +57,37 @@ const parlayVaultContract = {
         {
           indexed: false,
           internalType: "uint256",
-          name: "MaxAllowedUsersChanged",
+          name: "maxAllowedUsersChanged",
           type: "uint256",
         },
       ],
       name: "MaxAllowedUsersChanged",
+      type: "event",
+    },
+    {
+      anonymous: false,
+      inputs: [
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "maxMarketNumberPerRound",
+          type: "uint256",
+        },
+      ],
+      name: "MaxMarketNumberPerRoundChanged",
+      type: "event",
+    },
+    {
+      anonymous: false,
+      inputs: [
+        {
+          indexed: false,
+          internalType: "uint256",
+          name: "maxTradeRate",
+          type: "uint256",
+        },
+      ],
+      name: "MaxTradeRateChanged",
       type: "event",
     },
     {
@@ -598,6 +624,11 @@ const parlayVaultContract = {
             },
             {
               internalType: "uint256",
+              name: "_maxTradeRate",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
               name: "_minDepositAmount",
               type: "uint256",
             },
@@ -609,6 +640,11 @@ const parlayVaultContract = {
             {
               internalType: "uint256",
               name: "_minTradeAmount",
+              type: "uint256",
+            },
+            {
+              internalType: "uint256",
+              name: "_maxMarketNumberPerRound",
               type: "uint256",
             },
           ],
@@ -647,6 +683,30 @@ const parlayVaultContract = {
       type: "function",
     },
     {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+        {
+          internalType: "address",
+          name: "",
+          type: "address",
+        },
+      ],
+      name: "marketNumberPerRound",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
       inputs: [],
       name: "maxAllowedDeposit",
       outputs: [
@@ -662,6 +722,32 @@ const parlayVaultContract = {
     {
       inputs: [],
       name: "maxAllowedUsers",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "maxMarketNumberPerRound",
+      outputs: [
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "maxTradeRate",
       outputs: [
         {
           internalType: "uint256",
@@ -912,6 +998,32 @@ const parlayVaultContract = {
         },
       ],
       name: "setMaxAllowedUsers",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "_maxMarketNumberPerRound",
+          type: "uint256",
+        },
+      ],
+      name: "setMaxMarketNumberPerRound",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
+          internalType: "uint256",
+          name: "_maxTradeRate",
+          type: "uint256",
+        },
+      ],
+      name: "setMaxTradeRate",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",

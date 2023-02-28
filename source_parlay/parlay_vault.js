@@ -13,9 +13,9 @@ const marketschecker = require("./parlay_marketschecker.js");
 const { performance } = require("perf_hooks");
 const { isGeneratorFunction } = require("util/types");
 
-const Discord = require("discord.js");
-const vaultBot = new Discord.Client();
-vaultBot.login(process.env.VAULT_BOT_TOKEN);
+// const Discord = require("discord.js");
+// const vaultBot = new Discord.Client();
+// vaultBot.login(process.env.VAULT_BOT_TOKEN);
 
 const parlayAMMContract = new ethers.Contract(
   process.env.PARLAY_AMM_CONTRACT,
@@ -97,6 +97,10 @@ async function trade(
   );
 
   let parlayMarkets = await getMarketCombinationsForParlays(tradingMarkets, round);
+
+  console.log(tradingMarkets);
+  console.log(parlayMarkets);
+  console.log(parlayMarkets.length);
 
   for (let key in parlayMarkets) {
     let markets = parlayMarkets[key][0];
@@ -290,8 +294,6 @@ function delay(time) {
   });
 }
 
-processVault();
-
-// module.exports = {
-//   processVault,
-// };
+module.exports = {
+  processVault,
+};
