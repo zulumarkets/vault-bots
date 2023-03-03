@@ -4,6 +4,7 @@ const constants = require("../constants.js");
 const thalesData = require("thales-data");
 const ethers = require("ethers");
 const w3utils = require("web3-utils");
+const Vault = require("../contracts/ParlayVault.js");
 
 const wallet = new ethers.Wallet(constants.privateKey, constants.etherprovider);
 
@@ -18,6 +19,7 @@ const Position = {
 };
 
 async function processMarkets(
+  round,
   priceLowerLimit,
   priceUpperLimit,
   roundEndTime,
@@ -27,6 +29,12 @@ async function processMarkets(
 
   console.log(
     "--------------------Started processing markets-------------------"
+  );
+
+  const vaultContract = new ethers.Contract(
+    process.env.PARLAY_VAULT_CONTRACT,
+    Vault.parlayVaultContract.abi,
+    wallet
   );
 
   const positionalMarkets = await thalesData.sportMarkets.markets({
@@ -40,6 +48,9 @@ async function processMarkets(
     SportPositionalMarketDataContract.sportPositionalMarketDataContract.abi,
     wallet
   );
+
+  const maxMarketUsedInRoundCount =
+    await vaultContract.maxMarketUsedInRoundCount();
 
   const [oddsForAllActiveMarkets, priceImpactForAllActiveMarkets] =
     await Promise.all([
@@ -68,6 +79,15 @@ async function processMarkets(
     ) {
       console.log("eligible");
       try {
+        let marketRoundCount = await vaultContract.marketUsedInRoundCount(
+          round,
+          market.address
+        );
+        if (marketRoundCount / 1 == maxMarketUsedInRoundCount / 1) {
+          console.log("skip");
+          continue;
+        }
+
         let buyPriceImpactHome =
           marketPriceImpact.priceImpact[Position.HOME] / 1e18;
         let buyPriceImpactAway =
@@ -83,7 +103,7 @@ async function processMarkets(
           buyPriceImpactAway >= skewImpactLimit &&
           buyPriceImpactDraw >= skewImpactLimit
         ) {
-            console.log("continued");
+          console.log("continued");
           continue;
         }
 

@@ -70,11 +70,11 @@ const parlayVaultContract = {
         {
           indexed: false,
           internalType: "uint256",
-          name: "maxMarketNumberPerRound",
+          name: "maxMarketUsedInRoundCount",
           type: "uint256",
         },
       ],
-      name: "MaxMarketNumberPerRoundChanged",
+      name: "MaxMarketUsedInRoundCountChanged",
       type: "event",
     },
     {
@@ -644,7 +644,7 @@ const parlayVaultContract = {
             },
             {
               internalType: "uint256",
-              name: "_maxMarketNumberPerRound",
+              name: "_maxMarketUsedInRoundCount",
               type: "uint256",
             },
           ],
@@ -695,7 +695,7 @@ const parlayVaultContract = {
           type: "address",
         },
       ],
-      name: "marketNumberPerRound",
+      name: "marketUsedInRoundCount",
       outputs: [
         {
           internalType: "uint256",
@@ -734,7 +734,7 @@ const parlayVaultContract = {
     },
     {
       inputs: [],
-      name: "maxMarketNumberPerRound",
+      name: "maxMarketUsedInRoundCount",
       outputs: [
         {
           internalType: "uint256",
@@ -1006,11 +1006,11 @@ const parlayVaultContract = {
       inputs: [
         {
           internalType: "uint256",
-          name: "_maxMarketNumberPerRound",
+          name: "_maxMarketUsedInRoundCount",
           type: "uint256",
         },
       ],
-      name: "setMaxMarketNumberPerRound",
+      name: "setMaxMarketUsedInRoundCount",
       outputs: [],
       stateMutability: "nonpayable",
       type: "function",

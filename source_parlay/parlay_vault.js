@@ -90,6 +90,7 @@ async function trade(
   gasp
 ) {
   let tradingMarkets = await marketschecker.processMarkets(
+    round,
     priceLowerLimit,
     priceUpperLimit,
     roundEndTime,
@@ -97,10 +98,6 @@ async function trade(
   );
 
   let parlayMarkets = await getMarketCombinationsForParlays(tradingMarkets, round);
-
-  console.log(tradingMarkets);
-  console.log(parlayMarkets);
-  console.log(parlayMarkets.length);
 
   for (let key in parlayMarkets) {
     let markets = parlayMarkets[key][0];
