@@ -413,6 +413,45 @@ const parlayVaultContract = {
     {
       inputs: [
         {
+          internalType: "address[]",
+          name: "sportMarkets",
+          type: "address[]",
+        },
+        {
+          internalType: "uint256[]",
+          name: "positions",
+          type: "uint256[]",
+        },
+        {
+          internalType: "uint256",
+          name: "sUSDPaid",
+          type: "uint256",
+        },
+      ],
+      name: "canTrade",
+      outputs: [
+        {
+          internalType: "bool",
+          name: "",
+          type: "bool",
+        },
+        {
+          internalType: "string",
+          name: "",
+          type: "string",
+        },
+        {
+          internalType: "uint256",
+          name: "",
+          type: "uint256",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
           internalType: "uint256",
           name: "",
           type: "uint256",

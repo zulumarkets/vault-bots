@@ -10,9 +10,6 @@ const SportAMM = require("../contracts/SportAMM.js");
 const ParlayAMM = require("../contracts/ParlayAMM.js");
 const marketschecker = require("./parlay_marketschecker.js");
 
-const { performance } = require("perf_hooks");
-const { isGeneratorFunction } = require("util/types");
-
 // const Discord = require("discord.js");
 // const vaultBot = new Discord.Client();
 // vaultBot.login(process.env.VAULT_BOT_TOKEN);
@@ -90,14 +87,17 @@ async function trade(
   gasp
 ) {
   let tradingMarkets = await marketschecker.processMarkets(
-    round,
     priceLowerLimit,
     priceUpperLimit,
     roundEndTime,
     skewImpactLimit
   );
 
+
+  console.log(tradingMarkets);
   let parlayMarkets = await getMarketCombinationsForParlays(tradingMarkets, round);
+
+  console.log(parlayMarkets);
 
   for (let key in parlayMarkets) {
     let markets = parlayMarkets[key][0];
@@ -171,30 +171,19 @@ async function prepareTrade(markets, positions, sUSDPaid, skewImpactLimit) {
     eligible = true;
 
   try {
-    let result = await parlayAMMContract.buyQuoteFromParlay(
+    let result = await vaultContract.canTrade(
       markets,
       positions,
       sUSDPaid
     );
 
-    for (let i in markets) {
-      let skewImpact =
-        (await sportAMMContract.buyPriceImpact(
-          markets[i],
-          positions[i],
-          result.amountsToBuy[i]
-        )) / 1e18;
 
-      if (skewImpact >= skewImpactLimit) {
-        eligible = false;
-        break;
-      }
-    }
-
-    if (eligible) {
+    if (result[0]) {
       totalBuyAmount = result.totalBuyAmount / 1e18;
       totalQuote = result.totalQuote / 1e18;
       sUSDAfterFees = result.sUSDAfterFees / 1e18;
+    } else {
+      console.log('Cannot trade', result[1]);
     }
   } catch (e) {
     if (!("error" in e)) {
@@ -202,7 +191,7 @@ async function prepareTrade(markets, positions, sUSDPaid, skewImpactLimit) {
     } else {
       let errorBody = JSON.parse(e.error.body);
       console.log(
-        `Quote failed, message -`,
+        `Response failed, message -`,
         errorBody.error.message
       );
     }
