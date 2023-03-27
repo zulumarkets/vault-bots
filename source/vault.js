@@ -21,13 +21,15 @@ const thalesAMMContract = new ethers.Contract(
   wallet
 );
 
-const VaultContract = new ethers.Contract(
-  process.env.AMM_VAULT_CONTRACT,
-  Vault.vaultContract.abi,
-  wallet
-);
+let VaultContract;
 
-async function processVault() {
+async function processVault(vaultAddress) {
+  VaultContract = new ethers.Contract(
+    vaultAddress,
+    Vault.vaultContract.abi,
+    wallet
+  );
+
   let gasp = await constants.etherprovider.getGasPrice();
 
   const round = await VaultContract.round();

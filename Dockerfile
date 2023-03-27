@@ -25,7 +25,7 @@ RUN npm install
 COPY . .
 
 EXPOSE 3001
-CMD [ "node", "index_sport.js" ]
+CMD [ "node", "index.js" ]
 #scripts/exersizeAMMOrders.js
 
 #thalesmarket/ammvault

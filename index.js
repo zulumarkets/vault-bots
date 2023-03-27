@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const vault = require("./source/vault.js");
 
+let vaults = process.env.VAULT_CONTRACTS.split(",");
+
 async function doLoop() {
   while (true) {
     try {
@@ -15,10 +17,12 @@ async function doLoop() {
 
 async function doMain() {
   console.log(
-      "==================== START PROCESSING VAULT ===================="
+    "==================== START PROCESSING VAULT ===================="
   );
 
-  await vault.processVault();
+  for (let v in vaults) {
+    await vault.processVault(vaults[v]);
+  }
 
   console.log("==================== END PROCESSING VAULT ====================");
 }
