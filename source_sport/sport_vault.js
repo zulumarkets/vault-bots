@@ -12,6 +12,8 @@ const marketschecker = require("./sport_marketschecker.js");
 
 const { performance } = require("perf_hooks");
 
+let VaultContract;
+
 // const Discord = require("discord.js");
 // const vaultBot = new Discord.Client();
 // vaultBot.login(process.env.VAULT_BOT_TOKEN);
@@ -23,7 +25,7 @@ const sportAMMContract = new ethers.Contract(
 );
 
 async function processVault(vaultAddress) {
-  const VaultContract = new ethers.Contract(
+  VaultContract = new ethers.Contract(
     vaultAddress,
     Vault.sportVaultContract.abi,
     wallet
