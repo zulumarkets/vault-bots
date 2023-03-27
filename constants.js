@@ -7,6 +7,8 @@ if (process.env.INFURA_URL.includes("alch")) {
     { chainId: Number(process.env.NETWORK_ID), name: process.env.NETWORK },
     process.env.INFURA
   );
+} else if (process.env.INFURA_URL.includes("chainnodes")) {
+  etherprovider = new ethers.providers.JsonRpcProvider(process.env.INFURA_URL);
 } else {
   etherprovider = new ethers.providers.InfuraProvider(
     { chainId: Number(process.env.NETWORK_ID), name: process.env.NETWORK },

@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const vault = require("./source_sport/sport_vault.js");
 
+let vaults = process.env.SPORT_VAULT_CONTRACTS.split(',');
+
 async function doLoop() {
   while (true) {
     try {
@@ -18,7 +20,9 @@ async function doMain() {
     "==================== START PROCESSING VAULT ===================="
   );
 
-  await vault.processVault();
+  for (let v in vaults) {
+    await vault.processVault(vaults[v]);
+  }
 
   console.log("==================== END PROCESSING VAULT ====================");
 }

@@ -22,13 +22,13 @@ const sportAMMContract = new ethers.Contract(
   wallet
 );
 
-const VaultContract = new ethers.Contract(
-  process.env.SPORT_VAULT_CONTRACT,
-  Vault.sportVaultContract.abi,
-  wallet
-);
+async function processVault(vaultAddress) {
+  const VaultContract = new ethers.Contract(
+    vaultAddress,
+    Vault.sportVaultContract.abi,
+    wallet
+  );
 
-async function processVault() {
   let gasp = await constants.etherprovider.getGasPrice();
   const round = await VaultContract.round();
   const roundEndTime = (await VaultContract.getCurrentRoundEnd()).toString();
@@ -259,16 +259,6 @@ async function sendRoundErrorMessage(message) {
     .setColor("#a83232");
   let vaultInfo = await vaultBot.channels.fetch(process.env.ERROR_CHANNEL_ID);
   vaultInfo.send(message);
-}
-
-function getAsset(currencyKey) {
-  if (currencyKey == "ETH") {
-    return Asset.ETH;
-  } else if (currencyKey == "BTC") {
-    return Asset.BTC;
-  } else {
-    return Asset.Other;
-  }
 }
 
 function delay(time) {

@@ -22,7 +22,7 @@
     "ethereumjs-abi": "^0.6.8",
     "ethers": "^5.7.2",
     "perf_hooks": "^0.0.1",
-    "thales-data": "^1.1.20",
+    "thales-data": "^1.2.35",
     "web3": "^1.3.5",
     "web3-utils": "^1.2.11"
   },
